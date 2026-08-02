@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Git Drive</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+  :root {
+    --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;
+    --accent:#58a6ff;--accent2:#58a6ff;--accent3:#58a6ff;
+    --danger:#f85149;--success:#238636;--warn:#d29922;
+    --text:#c9d1d9;--text2:#8b949e;--text3:#6e7681;
+    --card:#161b22;--card2:#21262d;--glow:transparent;
+  }
+  html { font-size: 110%; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  button,a{outline:none;}
+  body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+  #app{position:relative;z-index:1}
+  .auth-screen{display:flex;min-height:100vh;align-items:center;justify-content:center;padding:2rem;padding-bottom:12vh}
+  .auth-box{width:100%;max-width:460px;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:none;animation:fadeUp 0.4s ease;overflow:hidden}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .terminal-header{display:flex;align-items:center;padding:0.6rem 1rem;background:var(--bg);border-bottom:1px solid var(--border);gap:0.75rem;}
+  .terminal-dots{display:flex;gap:6px;}
+  .terminal-dots .dot{width:10px;height:10px;border-radius:50%;}
+  .terminal-dots .dot:nth-child(1){background:#ff5f56;}
+  .terminal-dots .dot:nth-child(2){background:#ffbd2e;}
+  .terminal-dots .dot:nth-child(3){background:#27c93f;}
+  .terminal-title{color:var(--text3);font-size:0.75rem;flex:1;text-align:left;font-family:'JetBrains Mono',monospace;}
+  .auth-body{padding:2.5rem;}
+  .auth-title{font-size:1.4rem;font-weight:700;margin-bottom:0.4rem;color:var(--accent3);}
+  .auth-title .prompt{color:var(--text);}
+  .auth-sub{color:var(--text3);font-size:0.85rem;margin-bottom:2rem;line-height:1.5;}
+  .field{margin-bottom:1.5rem}
+  .field label{display:block;font-size:0.7rem;font-weight:700;color:var(--text3);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.05em}
+  .field input{width:100%;background:var(--bg3);border:1px solid transparent;border-radius:6px;padding:0.85rem 1rem;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:0.9rem;outline:none;transition:border-color 0.2s}
+  .field input:focus{border-color:var(--text3);}
+  .field input::placeholder{color:var(--text3)}
+  .hint{font-size:0.7rem;color:var(--text3);margin-top:0.4rem}
+  .btn{width:100%;padding:0.9rem;border:none;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.5rem}
+  .btn-primary{background:var(--success);border:1px solid rgba(240,246,252,0.1);color:#ffffff;margin-top:0.5rem}
+  .btn-primary:hover{filter:brightness(1.12);transform:translateY(-1px)}
+  .btn-primary:active{transform:translateY(0)}
+  .btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+  .btn-ghost{background:transparent;color:var(--text2);margin-top:0.8rem;font-size:0.85rem}
+  .btn-ghost:hover{color:var(--text)}
+  .btn-danger{background:transparent;color:var(--danger);border:1px solid var(--danger);margin-top:0.5rem;border-radius:6px;}
+  .btn-danger:hover{background:var(--bg3)}
+  .link-text{color:var(--accent2);text-decoration:underline;cursor:pointer;font-size:0.85rem;margin-left:5px}
+  .link-text:hover{filter:brightness(1.2)}
+  .divider{display:flex;align-items:center;justify-content:center;margin:1.5rem 0;color:var(--text3);font-size:0.75rem}
+  .logo{display:flex;align-items:center;gap:0.5rem;margin-bottom:0;}
+  .logo-text{font-size:1.4rem;font-weight:800;color:var(--accent);letter-spacing:-0.02em}
+  .msg{padding:0.7rem 0.9rem;border-left:3px solid;font-size:0.8rem;margin-bottom:1rem;line-height:1.5}
+  .msg-error{background:rgba(255,107,107,0.08);border-color:var(--danger);color:var(--danger)}
+  .msg-success{background:rgba(61,219,168,0.08);border-color:var(--success);color:var(--success)}
+  .msg-info{background:rgba(124,111,255,0.08);border-color:var(--accent);color:var(--accent2)}
+  .msg-warn{background:rgba(251,191,36,0.08);border-color:var(--warn);color:var(--warn)}
+  #main-app{display:none;flex-direction:column;min-height:100vh}
+  #main-app.active{display:flex}
+  .topbar{height:54px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.5rem;gap:1rem;position:sticky;top:0;z-index:100}
+  .topbar .logo{margin-bottom:0}
+  .topbar-path{flex:1;display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;color:var(--text3);overflow:hidden}
+  .path-seg{cursor:pointer;color:var(--text);background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:0.25rem 0.6rem;font-size:0.85rem;font-weight:600;transition:all 0.15s;white-space:nowrap;display:inline-flex;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+  .path-seg:hover{background:var(--card);border-color:var(--accent);color:var(--accent)}
+  .path-sep{color:var(--text3);display:flex;align-items:center;opacity:0.6}
+  .topbar-actions{display:flex;align-items:center;gap:0.5rem}
+  .user-chip{display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0.75rem;background:var(--bg2);border:1px solid var(--border);font-size:0.75rem;color:var(--text2);cursor:pointer;transition:border-color 0.15s,background 0.15s}
+  .user-chip:hover{border-color:var(--accent);background:var(--card2)}
+  .content{flex:1;padding:1.5rem 2rem;max-width:1200px;width:100%;margin:0 auto}
+  .toolbar{display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap}
+  .toolbar-btn{display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1px solid var(--border);background:var(--card2);color:var(--text2);font-family:'JetBrains Mono',monospace;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.15s}
+  .toolbar-btn:hover{border-color:var(--accent);color:var(--accent2);background:var(--glow)}
+  .mobile-back-btn{display:none;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:0.25rem 0.6rem;cursor:pointer;align-items:center;justify-content:center;transition:all 0.15s;margin-right:0.2rem;}
+  .toolbar-btn.primary{background:var(--success);border-color:var(--success);color:white}
+  .toolbar-btn.primary:hover{filter:brightness(1.12)}
+  .storage-bar-wrap{margin-left:auto;display:flex;align-items:center;gap:0.75rem;font-size:0.7rem;color:var(--text3)}
+  .storage-bar{width:100px;height:3px;background:var(--bg3);overflow:hidden}
+  .storage-bar-fill{height:100%;background:var(--accent);transition:width 0.3s}
+  .file-list-header{display:grid;grid-template-columns:1fr 120px 140px 40px;padding:0.4rem 0.75rem;border-bottom:1px solid var(--border);font-size:0.68rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;background:var(--bg2)}
+  .file-grid{display:flex;flex-direction:column;border:1px solid var(--border)}
+  .file-card{display:grid;grid-template-columns:1fr 120px 140px 40px;align-items:center;padding:0.65rem 0.75rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.12s;background:var(--card);position:relative;user-select:none;touch-action:manipulation}
+  .file-card:last-child{border-bottom:none}
+  .file-card:hover{background:var(--card2)}
+  .file-card.selected{background:rgba(124,111,255,0.1);border-bottom-color:rgba(124,111,255,0.2)}
+  .file-card-name-cell{display:flex;align-items:center;gap:0.65rem;min-width:0}
+  .file-type-icon{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .file-type-icon svg{width:16px;height:16px}
+  .file-name{font-size:0.85rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .file-size-cell{font-size:0.72rem;color:var(--text3)}
+  .file-date-cell{font-size:0.72rem;color:var(--text3)}
+  .file-card-menu{width:28px;height:28px;border:none;background:transparent;color:var(--text3);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.15s,background 0.15s;font-size:14px;justify-self:end}
+  .file-card:hover .file-card-menu{opacity:1}
+  .file-card-menu:hover{background:var(--bg2);color:var(--text)}
+  .ctx-menu{position:fixed;background:var(--card2);border:1px solid var(--border);padding:0.3rem;min-width:160px;box-shadow:0 8px 32px rgba(0,0,0,0.5);z-index:999;animation:fadeUp 0.12s ease}
+  .ctx-item{display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.75rem;cursor:pointer;font-size:0.82rem;color:var(--text2);transition:background 0.1s,color 0.1s}
+  .ctx-item:hover{background:var(--bg2);color:var(--text)}
+  .ctx-item.danger:hover{background:rgba(255,107,107,0.1);color:var(--danger)}
+  .ctx-sep{height:1px;background:var(--border);margin:0.25rem 0}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(3px);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem;animation:fadeIn 0.18s ease}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .modal{background:var(--card);border:1px solid var(--border);padding:2rem;border-radius:20px;width:100%;max-width:380px;box-shadow:0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05) inset;animation:fadeUp 0.22s ease}
+  #modal-content{display:flex;flex-direction:column;flex:1;min-height:0;max-height:100%}
+  .modal h3{font-size:1.05rem;font-weight:700;margin-bottom:1.2rem}
+  .modal.img-preview{background:#000;border-color:#000;padding:0;width:90vw;height:90vh;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+  .img-preview-bar{display:flex;align-items:center;justify-content:space-between;padding:0.6rem 1rem;background:rgba(0,0,0,0.8);border-bottom:1px solid var(--border)}
+  .img-preview-name{font-size:0.78rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw}
+  .img-preview-actions{display:flex;gap:0.5rem;flex-shrink:0}
+  .img-preview-btn{padding:0.3rem 0.7rem;font-size:0.75rem;font-family:'JetBrains Mono',monospace;cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--text2);transition:all 0.15s}
+  .img-preview-btn:hover{border-color:var(--accent);color:var(--accent2)}
+  .img-preview-body{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:1rem;min-height:200px}
+  .img-preview-body img{max-width:100%;max-height:80vh;object-fit:contain;display:block}
+  .upload-panel{position:fixed;bottom:1.5rem;right:1.5rem;width:340px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem;box-shadow:0 10px 30px rgba(0,0,0,0.7);z-index:300;display:none}
+  .upload-panel.active{display:block;animation:fadeUp 0.2s ease}
+  .upload-title{font-size:0.83rem;font-weight:700;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;color:var(--text)}
+  #upload-list{max-height:260px;overflow-y:auto;padding-right:4px}
+  .upload-item{margin-bottom:0.8rem}
+  .upload-item-name{font-size:0.73rem;color:var(--text2);margin-bottom:0.3rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .upload-progress-bar{height:3px;background:var(--bg2);overflow:hidden}
+  .upload-progress-fill{height:100%;background:var(--accent);transition:width 0.3s}
+  .upload-status{font-size:0.67rem;color:var(--text3);margin-top:0.25rem}
+  .upload-item.retrying .upload-status{color:var(--warn)}
+  .upload-retry-btn{display:inline-block;margin-top:0.35rem;padding:0.2rem 0.6rem;font-size:0.68rem;border:1px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer}
+  .upload-retry-btn:hover{border-color:var(--accent);color:var(--accent2)}
+  .empty-state{text-align:center;padding:5rem 2rem;color:var(--text3)}
+  .empty-icon{margin-bottom:1rem;opacity:0.2}
+  .empty-title{font-size:1rem;font-weight:600;margin-bottom:0.5rem;color:var(--text2)}
+  .empty-sub{font-size:0.78rem}
+  .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%!important;animation:spin 0.6s linear infinite;display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-state{display:flex;flex-direction:column;align-items:center;gap:1rem;padding:5rem;color:var(--text3);font-size:0.82rem}
+  ::-webkit-scrollbar{width:5px;height:5px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border)}
+  ::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+  .busy-toast{position:fixed;top:1.2rem;left:50%;transform:translateX(-50%);z-index:9999;background:var(--card2);border:1px solid var(--warn);color:var(--warn);font-family:'JetBrains Mono',monospace;font-size:0.78rem;font-weight:600;padding:0.65rem 1.2rem;box-shadow:0 4px 24px rgba(0,0,0,0.5);animation:fadeUp 0.18s ease;pointer-events:none;white-space:normal;text-align:center;width:max-content;max-width:90vw;border-radius:6px;}
+  .search-input{width:100%;background:var(--bg3);border:1px solid transparent;border-radius:6px;padding:0.75rem 1rem;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:0.85rem;outline:none;transition:all 0.2s}
+  .search-input:focus{border-color:var(--accent);background:var(--card)}
+  .search-results-dropdown{position:absolute;top:calc(100% + 0.3rem);left:0;right:0;background:var(--card2);border:1px solid var(--border);border-radius:6px;max-height:300px;overflow-y:auto;z-index:900;box-shadow:0 8px 32px rgba(0,0,0,0.5)}
+  .search-result-item{padding:0.6rem 1rem;cursor:pointer;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:0.2rem;transition:background 0.15s}
+  .search-result-item:last-child{border-bottom:none}
+  .search-result-item:hover{background:var(--bg3)}
+  .sr-name{font-weight:600;font-size:0.85rem;color:var(--text)}
+  .sr-path{font-size:0.7rem;color:var(--text3)}
+  .hidden{display:none!important}
+  .drag-overlay{position:fixed;inset:0;background:rgba(124,111,255,0.1);border:3px dashed var(--accent);z-index:200;display:none;align-items:center;justify-content:center;font-size:1.4rem;font-weight:700;color:var(--accent2);backdrop-filter:blur(2px)}
+  .drag-overlay.active{display:flex}
+  .tag{display:inline-flex;align-items:center;padding:0.18rem 0.55rem;font-size:0.63rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em}
+  .tag-enc{background:rgba(52,217,240,0.1);color:var(--accent3);border:1px solid rgba(52,217,240,0.22)}
+  .stats-bar{display:flex;gap:2rem;margin-bottom:1rem;padding:0.9rem 1.2rem;background:var(--card);border:1px solid var(--border);flex-wrap:wrap}
+  .stat{display:flex;flex-direction:column;gap:0.2rem}
+  .stat-val{font-size:1rem;font-weight:700;background:linear-gradient(135deg,var(--accent2),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .stat-label{font-size:0.63rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.09em}
+  .modal.img-preview .img-preview-body{position:relative}
+  .gallery-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08);color:var(--text);font-size:1.4rem;cursor:pointer;transition:all 0.18s;z-index:10;backdrop-filter:blur(4px);user-select:none}
+  .gallery-nav:hover{background:rgba(124,111,255,0.4);border-color:var(--accent)}
+  .gallery-nav.prev{left:0.75rem}
+  .gallery-nav.next{right:0.75rem}
+  .gallery-counter{font-size:0.72rem;color:var(--text3);letter-spacing:0.04em}
+  .gallery-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0.8rem;color:var(--text3);font-size:0.8rem}
+  .text-viewer{background:var(--bg);flex:1;overflow:auto;display:flex;font-size:0.78rem;line-height:1.65;min-height:0}
+  .text-viewer-lines{padding:0.8rem 0;text-align:right;color:var(--text3);background:var(--bg2);border-right:1px solid var(--border);user-select:none;flex-shrink:0;font-size:0.72rem;opacity:0.5}
+  .text-viewer-lines span{display:block;padding:0 0.6rem}
+  .text-viewer-code{padding:0.8rem 1rem;white-space:pre-wrap;word-wrap:break-word;color:var(--text);flex:1;min-width:0;tab-size:2;font-family:'JetBrains Mono',monospace;margin:0}
+  .fab-container{position:fixed;bottom:2rem;left:2rem;z-index:900;display:flex;flex-direction:column;align-items:flex-start;gap:1rem}
+  .fab-menu{display:flex;flex-direction:column;align-items:flex-start;gap:0.8rem;opacity:0;pointer-events:none;transform:translateY(20px);transition:all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)}
+  .fab-menu.active{opacity:1;pointer-events:all;transform:translateY(0)}
+  .fab-item{display:flex;align-items:center;gap:0.65rem;padding:0.75rem 1.25rem;background:var(--card2);border:1px solid var(--border);border-radius:30px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:0.85rem;font-weight:600;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,0.4);transition:all 0.2s}
+  .fab-item:hover{background:var(--bg3);border-color:var(--accent);color:var(--accent2);transform:translateY(-2px)}
+  .fab-item.primary{background:var(--success);border-color:rgba(255,255,255,0.1);color:#fff}
+  .fab-item.primary:hover{filter:brightness(1.15)}
+  .fab-main{width:60px;height:60px;border-radius:50%;background:var(--success);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;position:relative;z-index:901;box-shadow:0 6px 16px rgba(0,0,0,0.5)}
+  .fab-main:hover{transform:scale(1.05);filter:brightness(1.1)}
+  .fab-main svg{width:28px;height:28px;transition:transform 0.2s}
+  .fab-main.active svg{transform:rotate(45deg)}
+  @media (max-width: 768px) {
+    .topbar { padding: 0 1rem; }
+    .content { padding: 1rem; }
+    .file-list-header { display: none !important; }
+    .file-card {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 0.8rem 1rem;
+      position: relative;
+      padding-right: 50px;
+    }
+    .file-card-name-cell {
+      width: 100%;
+      margin-bottom: 0.25rem;
+    }
+    .file-size-cell {
+      padding-left: 34px;
+    }
+    .file-size-cell::after {
+      content: " • ";
+      margin: 0 0.3rem;
+      opacity: 0.5;
+    }
+    .file-card-menu {
+      position: absolute;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 1;
+      width: 36px;
+      height: 36px;
+    }
+    .file-card[data-type="folder"] .file-size-cell,
+    .file-card[data-type="folder"] .file-date-cell {
+      display: none !important;
+    }
+    .desktop-only { display: none !important; }
+    .topbar-path { display: none !important; }
+    .mobile-back-btn { display: flex; margin-right: 0; padding: 0.25rem 0.4rem; }
+    .topbar { padding: 0 0.6rem; gap: 0.3rem; }
+    .topbar-actions { flex: 1; justify-content: space-between; gap: 0.3rem; }
+    .topbar-storage { margin-right: auto !important; margin-left: 0.3rem !important; font-size: 0.75rem !important; }
+    #chip-username { display: none; }
+    .logout-text::before { display: none; }
+    .fab-container {
+      bottom: 1.5rem;
+      left: 1.5rem;
+    }
+    .upload-panel {
+      width: calc(100vw - 3rem);
+      right: 1.5rem;
+      bottom: calc(2rem + 60px);
+    }
+    .stats-bar {
+      padding: 0.8rem;
+      gap: 1rem;
+    }
+    .auth-box {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .auth-screen {
+      padding: 1rem;
+      align-items: center;
+    }
+    .img-preview-name {
+      max-width: 45vw;
+    }
+    .toolbar-btn {
+      padding: 0.45rem 0.6rem;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SIGNUP -->
+  <div id="screen-signup" class="auth-screen hidden">
+    <div class="auth-box">
+      <div class="terminal-header">
+        <div class="terminal-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="terminal-title">~/gitdrive — register</div>
+      </div>
+      <div class="auth-body">
+        <div class="auth-title"><span class="prompt">$</span> init</div>
+        <div class="auth-sub">create a new encrypted archive</div>
+        <div id="signup-msg"></div>
+        <div class="field">
+          <label>USERNAME</label>
+          <input type="text" id="su-username" placeholder="octocat" autocomplete="off"/>
+        </div>
+        <div class="field">
+          <label>ACCESS TOKEN</label>
+          <input type="password" id="su-pat" placeholder="ghp_..."/>
+          <div class="hint">Needs: repo, delete_repo</div>
+        </div>
+        <div class="field">
+          <label>VAULT KEY</label>
+          <input type="password" id="su-key" placeholder="strong passphrase"/>
+        </div>
+        <div class="field">
+          <label>CONFIRM KEY</label>
+          <input type="password" id="su-key2" placeholder="confirm passphrase"/>
+        </div>
+        <button class="btn btn-primary" id="su-btn" onclick="doSignup()"><span>init_vault</span></button>
+        <div class="divider">already exist? <span class="link-text" onclick="showScreen('login')">login here</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="screen-login" class="auth-screen">
+    <div class="auth-box">
+      <div class="terminal-header">
+        <div class="terminal-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="terminal-title">~/gitdrive — locked</div>
+      </div>
+      <div class="auth-body">
+        <div class="auth-title"><span class="prompt">$</span> unlock</div>
+        <div class="auth-sub">enter your credentials to decrypt access token</div>
+        <div id="login-msg"></div>
+        <div class="field">
+          <label>USERNAME</label>
+          <input type="text" id="li-username" placeholder="octocat" autocomplete="off"/>
+        </div>
+        <div class="field">
+          <label>PASSWORD</label>
+          <input type="password" id="li-key" placeholder="vault key"/>
+        </div>
+        <button class="btn btn-primary" id="li-btn" onclick="doLogin()"><span>unlock</span></button>
+        <div class="divider">new here? <span class="link-text" onclick="showScreen('signup')">create an account</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="main-app">
+    <div class="topbar">
+      <button class="mobile-back-btn" id="mobile-back-btn" onclick="navigateToPath(currentPath.length - 2)">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      <div class="topbar-path" id="breadcrumb"></div>
+      <div class="topbar-actions">
+        <span id="topbar-storage" class="topbar-storage" style="font-size: 0.85rem; color: var(--text2); margin-right: 0.5rem; font-weight: 500;"></span>
+        <div class="user-chip" id="user-chip" onclick="doLogout()">
+          <span id="chip-username"></span>
+          <span class="logout-text"><span class="desktop-only" style="color:var(--text3)">· </span>logout</span>
+        </div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="search-bar-container" style="margin-bottom: 1rem; position: relative;">
+        <input type="text" id="vault-search-input" class="search-input" placeholder="Search files and folders in vault..." oninput="handleSearch(this.value)" onfocus="handleSearch(this.value)" autocomplete="off"/>
+        <div id="search-results" class="search-results-dropdown" style="display:none;"></div>
+      </div>
+
+      <input type="file" id="file-input" multiple style="display:none" onchange="handleFileSelect(event)"/>
+      <div id="file-area">
+        <div id="file-list-header" class="file-list-header" style="display:none">
+          <span>Name</span><span>Size</span><span>Modified</span><span></span>
+        </div>
+        <div class="loading-state" id="loading-state"><div class="spinner"></div><span>Loading vault...</span></div>
+        <div class="file-grid" id="file-grid" style="display:none"></div>
+        <div class="empty-state hidden" id="empty-state">
+          <div class="empty-icon">
+            <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+          </div>
+          <div class="empty-title">This folder is empty</div>
+          <div class="empty-sub">Upload files or create a folder to get started</div>
+        </div>
+      </div>
+      <!-- Floating Action Button -->
+      <div class="fab-container">
+        <div class="fab-menu" id="fab-menu">
+          <button class="fab-item" onclick="showNewFolderModal(); toggleFab()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            New Folder
+          </button>
+          <button class="fab-item primary" onclick="triggerUpload()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            Upload File
+          </button>
+        </div>
+        <button class="fab-main" onclick="toggleFab()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="drag-overlay" id="drag-overlay">Drop files to upload</div>
+
+  <div class="upload-panel" id="upload-panel">
+    <div class="upload-title">
+      <span>Uploading</span>
+      <span style="cursor:pointer;color:var(--danger);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em" onclick="cancelUploads()">Cancel</span>
+    </div>
+    <div id="upload-list"></div>
+  </div>
+
+  <div class="ctx-menu hidden" id="ctx-menu"></div>
+
+  <div class="modal-overlay hidden" id="modal-overlay" onclick="closeModal(event)">
+    <div class="modal" id="modal-box" onclick="event.stopPropagation()">
+      <div id="modal-content"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CRYPTO ──────────────────────────────────────────────────────
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+async function deriveKey(password,salt){
+  const enc=new TextEncoder();
+  const km=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:200000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+
+async function encryptData(data,password){
+  const raw=typeof data==='string'?new TextEncoder().encode(data):data;
+  const salt=crypto.getRandomValues(new Uint8Array(16));
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const key=await deriveKey(password,salt);
+  const enc=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,raw);
+  const result=new Uint8Array(28+enc.byteLength);
+  result.set(salt,0);result.set(iv,16);result.set(new Uint8Array(enc),28);
+  return result;
+}
+
+async function decryptData(encBytes,password){
+  const salt=encBytes.slice(0,16),iv=encBytes.slice(16,28),ct=encBytes.slice(28);
+  const key=await deriveKey(password,salt);
+  const dec=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct);
+  return new Uint8Array(dec);
+}
+
+function bytesToBase64(bytes){
+  let b='';const cs=8192;
+  for(let i=0;i<bytes.length;i+=cs)b+=String.fromCharCode(...bytes.subarray(i,i+cs));
+  return btoa(b);
+}
+function base64ToBytes(b64){
+  const b=atob(b64),bytes=new Uint8Array(b.length);
+  for(let i=0;i<b.length;i++)bytes[i]=b.charCodeAt(i);
+  return bytes;
+}
+async function encryptToBase64(data,pw){return bytesToBase64(await encryptData(data,pw))}
+async function decryptFromBase64(b64,pw){return decryptData(base64ToBytes(b64),pw)}
+async function encryptText(t,pw){return encryptToBase64(t,pw)}
+async function decryptText(b64,pw){return new TextDecoder().decode(await decryptFromBase64(b64,pw))}
+
+// ── NETWORK RETRY HELPER ─────────────────────────────────────────
+// Wraps any async network call with exponential backoff retry.
+// Distinguishes fatal errors (auth/permission/validation — no point retrying)
+// from transient ones (timeouts, 5xx, rate limits, generic fetch failures).
+function isFatalError(err){
+  const msg=(err&&err.message||'').toLowerCase();
+  if(/rate limit|abuse/.test(msg))return false;
+  return /bad credentials|401|403|409|422|not found|404|repository|does not match/.test(msg);
+}
+async function withRetry(fn,{maxRetries=5,baseDelay=1000,maxDelay=20000,onRetry=null}={}){
+  let lastErr;
+  for(let attempt=0;attempt<=maxRetries;attempt++){
+    try{
+      return await fn();
+    }catch(e){
+      lastErr=e;
+      if(isFatalError(e))throw e;
+      if(attempt===maxRetries)break;
+      const wait=Math.min(baseDelay*Math.pow(2,attempt),maxDelay);
+      if(onRetry)onRetry(attempt+1,maxRetries,wait,e);
+      await sleep(wait);
+    }
+  }
+  throw lastErr;
+}
+
+// ── GITHUB API ───────────────────────────────────────────────────
+const GH='https://api.github.com';
+
+async function ghReq(method,path,body,pat){
+  const res=await fetch(GH+path,{method,headers:{'Authorization':`token ${pat}`,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.message||`GitHub API error ${res.status}`)}
+  return res.status===204?null:res.json();
+}
+async function createRepo(name,pat){
+  return ghReq('POST','/user/repos',{name,private:false,auto_init:true},pat);
+}
+async function deleteRepo(owner,name,pat){return ghReq('DELETE',`/repos/${owner}/${name}`,null,pat)}
+async function listRepos(owner,pat){
+  let all=[],page=1;
+  while(true){const chunk=await ghReq('GET',`/user/repos?per_page=100&page=${page}`,null,pat);all=all.concat(chunk);if(chunk.length<100)break;page++}
+  return all;
+}
+async function ghUploadFile(owner,repo,path,bytes,pat){
+  return ghReq('PUT',`/repos/${owner}/${repo}/contents/${path}`,{message:'vaultdrive',content:bytesToBase64(bytes)},pat);
+}
+async function ghDeleteFile(owner,repo,path,pat){
+  const info=await ghReq('GET',`/repos/${owner}/${repo}/contents/${path}`,null,pat);
+  return ghReq('DELETE',`/repos/${owner}/${repo}/contents/${path}`,{message:`vaultdrive: remove ${path}`,sha:info.sha},pat);
+}
+async function ghGetFileRaw(owner,repo,path,pat){
+  const res=await fetch(`${GH}/repos/${owner}/${repo}/contents/${path}`,{headers:{'Authorization':`token ${pat}`,'Accept':'application/vnd.github.v3.raw'}});
+  if(!res.ok)throw new Error(`Failed to fetch ${path} (${res.status})`);
+  return new Uint8Array(await res.arrayBuffer());
+}
+async function ghListFiles(owner,repo,path,pat){
+  try{
+    const res=await fetch(`${GH}/repos/${owner}/${repo}/contents/${path||''}`,{headers:{'Authorization':`token ${pat}`,'Accept':'application/vnd.github.v3+json'}});
+    if(!res.ok)return[];
+    const d=await res.json();return Array.isArray(d)?d:[];
+  }catch{return[]}
+}
+
+// Retry-wrapped variants used specifically for chunk upload/download,
+// where large files make transient network failures much more likely.
+async function ghUploadFileRetry(owner,repo,path,bytes,pat,onRetry){
+  return withRetry(()=>ghUploadFile(owner,repo,path,bytes,pat),{onRetry});
+}
+async function ghGetFileRawRetry(owner,repo,path,pat,onRetry){
+  return withRetry(()=>ghGetFileRaw(owner,repo,path,pat),{onRetry});
+}
+
+// ── SESSION ──────────────────────────────────────────────────────
+let session=null;
+
+// ── CONFIG REPO ──────────────────────────────────────────────────
+const CONFIG_REPO='vaultdrive-config';
+const CONFIG_FILE_PREFIX='config_v';
+const ROOT_META_PREFIX='root_v';
+const _versionCounters={};
+
+async function getNextVersion(prefix,pat,username){
+  if(_versionCounters[prefix]!==undefined){_versionCounters[prefix]++;return _versionCounters[prefix]}
+  const files=await ghListFiles(username,CONFIG_REPO,'',pat);
+  let best=0;
+  for(const f of files){if(f.name.startsWith(prefix)&&f.type==='file'){const n=parseInt(f.name.slice(prefix.length).replace('.enc',''))||0;if(n>best)best=n}}
+  _versionCounters[prefix]=best+1;return _versionCounters[prefix];
+}
+
+async function saveVersionedFile(prefix,content,pat,username,oldFilename){
+  const newNum=await getNextVersion(prefix,pat,username);
+  const newFilename=`${prefix}${newNum}.enc`;
+  const bytes=typeof content==='string'?new TextEncoder().encode(content):content;
+  await withRetry(()=>ghUploadFile(username,CONFIG_REPO,newFilename,bytes,pat));
+  // Delete previous version by exact filename — no directory scan, no cache issues
+  if(oldFilename&&oldFilename!==newFilename){
+    try{await withRetry(()=>ghDeleteFile(username,CONFIG_REPO,oldFilename,pat))}
+    catch(e){console.warn('del old:',e.message)}
+  }
+  return newFilename;
+}
+
+// ── SIGNUP ───────────────────────────────────────────────────────
+async function doSignup(){
+  const username=document.getElementById('su-username').value.trim();
+  const pat=document.getElementById('su-pat').value.trim();
+  const key=document.getElementById('su-key').value;
+  const key2=document.getElementById('su-key2').value;
+  const msgEl=document.getElementById('signup-msg');
+  if(!username||!pat||!key)return showMsg(msgEl,'error','All fields are required.');
+  if(key!==key2)return showMsg(msgEl,'error','Vault keys do not match.');
+  if(key.length<8)return showMsg(msgEl,'error','Vault key must be at least 8 characters.');
+  const btn=document.getElementById('su-btn');
+  btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Setting up...';
+  try{
+    showMsg(msgEl,'info','Verifying credentials...');
+    const user=await ghReq('GET','/user',null,pat);
+    if(user.login.toLowerCase()!==username.toLowerCase())throw new Error('Username does not match the PAT owner.');
+    const repos=await listRepos(username,pat);
+    const vaultRepos=repos.filter(r=>r.name.startsWith('vaultdrive-'));
+    if(vaultRepos.length>0){
+      const ok=await confirmModal('Existing Repos Found',`Found ${vaultRepos.length} existing vaultdrive repo(s). Delete all and start fresh?`,'Delete All & Continue','Cancel');
+      if(!ok){btn.disabled=false;btn.innerHTML='<span>Create Vault</span>';return}
+      showMsg(msgEl,'info','Deleting existing repos...');
+      for(const r of vaultRepos)await deleteRepo(username,r.name,pat);
+    }
+    showMsg(msgEl,'info','Creating config repo...');
+    await createRepo(CONFIG_REPO,pat);
+    Object.keys(_versionCounters).forEach(k=>delete _versionCounters[k]);
+    const encPat=await encryptText(pat,key);
+    const config={version:1,username,encPat,dataRepos:[],totalFiles:0,totalSize:0,createdAt:Date.now()};
+    await saveVersionedFile(CONFIG_FILE_PREFIX,await encryptText(JSON.stringify(config),key),pat,username);
+    const rootMeta={id:'root',name:'root',folders:[],files:[],createdAt:Date.now(),updatedAt:Date.now()};
+    await saveVersionedFile(ROOT_META_PREFIX,await encryptText(JSON.stringify(rootMeta),key),pat,username);
+    showMsg(msgEl,'success','Vault created! Redirecting...');
+    await sleep(1500);
+    document.getElementById('li-username').value=username;
+    showScreen('login');
+  }catch(e){showMsg(msgEl,'error',e.message)}
+  finally{btn.disabled=false;btn.innerHTML='<span>Create Vault</span>'}
+}
+
+// ── LOGIN ────────────────────────────────────────────────────────
+async function doLogin(){
+  const username=document.getElementById('li-username').value.trim();
+  const key=document.getElementById('li-key').value;
+  const msgEl=document.getElementById('login-msg');
+  if(!username||!key)return showMsg(msgEl,'error','All fields required.');
+  const btn=document.getElementById('li-btn');
+  btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Unlocking...';
+  try{
+    showMsg(msgEl,'info','Reading config...');
+    const result=await readLatestVersionedFile(CONFIG_FILE_PREFIX,null,username);
+    if(!result)throw new Error('No config file found. Please sign up first.');
+    let configJson;
+    try{configJson=await decryptText(new TextDecoder().decode(result.data),key)}
+    catch{throw new Error('Invalid vault key or corrupted config.')}
+    const config=JSON.parse(configJson);
+    let pat;
+    try{pat=await decryptText(config.encPat,key)}
+    catch{throw new Error('Failed to decrypt PAT.')}
+    const user=await ghReq('GET','/user',null,pat);
+    if(user.login.toLowerCase()!==username.toLowerCase())throw new Error('PAT mismatch.');
+    session={username,pat,key,config,configFilename:result.filename};
+    Object.keys(_versionCounters).forEach(k=>delete _versionCounters[k]);
+    Object.keys(_folderMetaCache).forEach(k=>delete _folderMetaCache[k]);
+    if(result.filename){const n=parseInt(result.filename.slice(CONFIG_FILE_PREFIX.length).replace('.enc',''))||1;_versionCounters[CONFIG_FILE_PREFIX]=n}
+    showMsg(msgEl,'success','Vault unlocked!');
+    await sleep(500);enterApp();
+  }catch(e){showMsg(msgEl,'error',e.message)}
+  finally{btn.disabled=false;btn.innerHTML='<span>Unlock Vault</span>'}
+}
+
+async function readLatestVersionedFile(prefix,pat,username){
+  const effectivePat=pat||(session&&session.pat)||null;
+  const authHeader=effectivePat?`token ${effectivePat}`:null;
+  
+  if(!authHeader){
+    // Bypasses 60/hr GitHub API limit for unauthenticated logins using the CDN
+    let bestNum=0;
+    let lastData=null;
+    let i=1;
+    while(true){
+      const url=`https://raw.githubusercontent.com/${username}/${CONFIG_REPO}/main/${prefix}${i}.enc?t=${Date.now()}`;
+      try{
+        const res=await fetch(url);
+        if(res.ok){
+          bestNum=i;
+          lastData=await res.arrayBuffer();
+          i++;
+        }else{
+          break;
+        }
+      }catch(e){break;}
+    }
+    if(bestNum===0) return null;
+    return {data:new Uint8Array(lastData), filename:`${prefix}${bestNum}.enc`};
+  }
+
+  const files=await withRetry(async()=>{
+    const listRes=await fetch(`${GH}/repos/${username}/${CONFIG_REPO}/contents/`,{headers:{...(authHeader?{'Authorization':authHeader}:{}),'Accept':'application/vnd.github.v3+json'}});
+    if(!listRes.ok){
+      if(listRes.status===404)throw new Error('Config repo not found. Please sign up first.');
+      if(listRes.status===409)throw new Error('Config repository is empty. Please sign up first.');
+      const body=await listRes.json().catch(()=>({}));
+      throw new Error(body.message||`GitHub error ${listRes.status}`);
+    }
+    const d=await listRes.json();
+    if(!Array.isArray(d))throw new Error('Unexpected response from GitHub.');
+    return d;
+  },{maxRetries:4});
+  let best=null,bestNum=-1;
+  for(const f of files){
+    if(f.name.startsWith(prefix)&&f.type==='file'){
+      const n=parseInt(f.name.slice(prefix.length).replace('.enc',''))||0;
+      if(n>bestNum){bestNum=n;best=f}
+    }
+  }
+  if(!best)return null;
+  const data=await withRetry(async()=>{
+    const rawRes=await fetch(`${GH}/repos/${username}/${CONFIG_REPO}/contents/${best.name}`,{headers:{...(authHeader?{'Authorization':authHeader}:{}),'Accept':'application/vnd.github.v3.raw'}});
+    if(!rawRes.ok)throw new Error(`Failed to fetch ${best.name} (${rawRes.status})`);
+    return new Uint8Array(await rawRes.arrayBuffer());
+  },{maxRetries:4});
+  return{data,filename:best.name};
+}
+
+// ── APP STATE ────────────────────────────────────────────────────
+let currentPath=[],currentFolderMeta=null,selectedItems=new Set();
+const ROOT_META_ID='root';
+const _folderMetaCache={};
+
+function enterApp(){
+  showScreen('app');
+  document.getElementById('chip-username').textContent=session.username;
+  currentPath=[];loadFolder(ROOT_META_ID);setupDragDrop();updateStats();
+}
+
+function folderPrefix(id){return id==='root'?ROOT_META_PREFIX:`folder_${id}_v`}
+
+async function loadFolderMeta(folderId){
+  const{pat,key,username}=session;
+  const prefix=folderPrefix(folderId);
+  if(_folderMetaCache[folderId])return _folderMetaCache[folderId];
+  delete _versionCounters[prefix];
+  const result=await readLatestVersionedFile(prefix,pat,username);
+  if(!result){
+    if(folderId==='root'){const f={id:'root',name:'root',folders:[],files:[],createdAt:Date.now(),updatedAt:Date.now()};_folderMetaCache[folderId]=f;return f}
+    throw new Error(`Folder metadata not found: ${folderId}`);
+  }
+  const meta=JSON.parse(await decryptText(new TextDecoder().decode(result.data),key));
+  meta._filename=result.filename;
+  _versionCounters[prefix]=parseInt(result.filename.slice(prefix.length).replace('.enc',''))||1;
+  _folderMetaCache[folderId]=meta;return meta;
+}
+
+async function saveFolderMeta(meta){
+  const{pat,key,username}=session;
+  meta.updatedAt=Date.now();
+  const oldFilename=meta._filename||null;
+  const newFilename=await saveVersionedFile(folderPrefix(meta.id),await encryptText(JSON.stringify({...meta,_filename:undefined}),key),pat,username,oldFilename);
+  meta._filename=newFilename;_folderMetaCache[meta.id]=meta;return meta;
+}
+
+async function loadFolder(folderId,forceRefresh=false){
+  showLoading(true);selectedItems.clear();updateSelectionButtons();
+  try{
+    if(forceRefresh)delete _folderMetaCache[folderId];
+    currentFolderMeta=await loadFolderMeta(folderId);renderFolder();
+  }catch(e){alert('Error loading folder: '+e.message)}
+  finally{showLoading(false)}
+}
+
+// ── ICONS ─────────────────────────────────────────────────────────
+function getListIcon(item){
+  const ext=item._type==='folder'?'__folder':(item.name||'').split('.').pop().toLowerCase();
+  const typeMap={
+    jpg:'image',jpeg:'image',png:'image',gif:'image',webp:'image',svg:'image',bmp:'image',heic:'image',
+    mp4:'video',mkv:'video',avi:'video',mov:'video',webm:'video',flv:'video',mts:'video',m2ts:'video',ts:'video',m4v:'video','3gp':'video',
+    mp3:'audio',wav:'audio',flac:'audio',ogg:'audio',aac:'audio',m4a:'audio',
+    pdf:'pdf',
+    doc:'doc',docx:'doc',txt:'text',md:'text',rtf:'text',
+    xls:'sheet',xlsx:'sheet',csv:'sheet',
+    ppt:'slides',pptx:'slides',
+    zip:'archive',rar:'archive','7z':'archive',tar:'archive',gz:'archive',bz2:'archive',
+    js:'code',ts:'code',py:'code',html:'code',css:'code',json:'code',xml:'code',sh:'code',cpp:'code',c:'code',java:'code',rs:'code',go:'code',rb:'code',php:'code',
+    __folder:'folder'
+  };
+  const type=typeMap[ext]||'file';
+  const icons={
+    folder:`<svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>`,
+    image:`<svg viewBox="0 0 24 24" fill="none" stroke="#34d9f0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
+    video:`<svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="15" height="16"/><polygon points="22 8 17 12 22 16 22 8"/></svg>`,
+    audio:`<svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`,
+    pdf:`<svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>`,
+    doc:`<svg viewBox="0 0 24 24" fill="none" stroke="#7c6fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>`,
+    text:`<svg viewBox="0 0 24 24" fill="none" stroke="#a9aac4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>`,
+    sheet:`<svg viewBox="0 0 24 24" fill="none" stroke="#3ddba8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>`,
+    slides:`<svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+    archive:`<svg viewBox="0 0 24 24" fill="none" stroke="#34d9f0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`,
+    code:`<svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
+    file:`<svg viewBox="0 0 24 24" fill="none" stroke="#6b6c8a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`
+  };
+  return icons[type]||icons.file;
+}
+
+// ── RENDER FOLDER ─────────────────────────────────────────────────
+function renderFolder(){
+  const grid=document.getElementById('file-grid');
+  const header=document.getElementById('file-list-header');
+  const empty=document.getElementById('empty-state');
+  grid.innerHTML='';
+  const items=[...(currentFolderMeta.folders||[]).map(f=>({...f,_type:'folder'})),...(currentFolderMeta.files||[]).map(f=>({...f,_type:'file'}))];
+  if(items.length===0){grid.style.display='none';header.style.display='grid';empty.classList.remove('hidden');updateBreadcrumb();return}
+  empty.classList.add('hidden');grid.style.display='flex';header.style.display='grid';
+  for(const item of items){
+    const card=document.createElement('div');
+    card.className='file-card';
+    card.dataset.id=item.id;card.dataset.type=item._type;
+    const sizeStr=item._type==='folder'?`${(item.files||[]).length} items`:formatSize(item.size||0);
+    const dateStr=new Date(item.updatedAt||item.createdAt||Date.now()).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    card.innerHTML=`<div class="file-card-name-cell"><span class="file-type-icon">${getListIcon(item)}</span><span class="file-name">${escHtml(item.name)}</span></div><div class="file-size-cell">${sizeStr}</div><div class="file-date-cell">${dateStr}</div><button class="file-card-menu" onclick="showItemMenu(event,'${item.id}','${item._type}')">⋮</button>`;
+    const isMobile = window.innerWidth <= 768;
+    if(item._type==='folder'){
+      card.addEventListener('dblclick',()=> { if(!isMobile) openFolder(item); });
+      card.addEventListener('click',(e)=>{
+        if(e.target.classList.contains('file-card-menu')) return;
+        if(isMobile) openFolder(item);
+        else toggleSelect(item.id,card);
+      });
+    }else{
+      const openAction = () => isImage(item)?previewImage(item):isPdf(item)?previewPdfFile(item):isReadable(item)?previewTextFile(item):null;
+      card.addEventListener('dblclick',()=> { if(!isMobile) openAction(); });
+      card.addEventListener('click',(e)=>{
+        if(e.target.classList.contains('file-card-menu')) return;
+        if(isMobile) openAction();
+        else toggleSelect(item.id,card);
+      });
+    }
+    grid.appendChild(card);
+  }
+  updateBreadcrumb();
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────
+async function openFolder(folder){
+  if(_uploadActive){showBusyToast('⚠ Upload in progress — please wait before navigating.');return;}
+  if(_deleteActive){showBusyToast('⚠ Delete in progress — please wait before navigating.');return;}
+  currentPath.push({id:folder.id,name:folder.name});await loadFolder(folder.id)
+}
+async function navigateToPath(index){
+  if(_uploadActive){showBusyToast('⚠ Upload in progress — please wait before navigating.');return;}
+  if(_deleteActive){showBusyToast('⚠ Delete in progress — please wait before navigating.');return;}
+  if(index===-1){currentPath=[];await loadFolder(ROOT_META_ID)}
+  else{const seg=currentPath[index];currentPath=currentPath.slice(0,index+1);await loadFolder(seg.id)}
+}
+function updateBreadcrumb(){
+  const el=document.getElementById('breadcrumb');
+  let html=`<span class="path-seg" onclick="navigateToPath(-1)">root</span>`;
+  const chevron=`<svg class="path-sep" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+  for(let i=0;i<currentPath.length;i++){const seg=currentPath[i];html+=`${chevron}<span class="path-seg" onclick="navigateToPath(${i})">${escHtml(seg.name)}</span>`}
+  el.innerHTML=html;
+
+  const mBtn = document.getElementById('mobile-back-btn');
+  if(mBtn) {
+    if(currentPath.length > 0) {
+      mBtn.style.display = 'flex';
+      mBtn.onclick = () => navigateToPath(currentPath.length - 2);
+    } else {
+      mBtn.style.display = 'none';
+    }
+  }
+}
+
+// ── NEW FOLDER ────────────────────────────────────────────────────
+function showNewFolderModal(){
+  showModal(`<h3>New Folder</h3><div class="field"><label>Folder Name</label><input type="text" id="new-folder-name" placeholder="my folder" style="border-radius:10px;padding:0.8rem 1rem"/></div><div id="new-folder-msg"></div><div style="display:flex;gap:0.75rem;margin-top:1.5rem"><button class="btn btn-primary" style="margin:0;flex:1;border-radius:20px" onclick="createFolder()">Create</button><button class="btn btn-ghost" style="margin:0;flex:1;border-radius:20px" onclick="closeModal()">Cancel</button></div>`);
+  setTimeout(()=>document.getElementById('new-folder-name').focus(),100);
+}
+async function createFolder(){
+  if(window._isCreatingFolder)return;
+  const name=document.getElementById('new-folder-name').value.trim();
+  if(!name)return;
+  window._isCreatingFolder=true;
+  const msgEl=document.getElementById('new-folder-msg');
+  showMsg(msgEl,'info','Creating folder...');
+  try{
+    const folderId=`f_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+    const newMeta={id:folderId,name,folders:[],files:[],createdAt:Date.now(),updatedAt:Date.now()};
+    await saveFolderMeta(newMeta);
+    if(!currentFolderMeta.folders)currentFolderMeta.folders=[];
+    currentFolderMeta.folders.push({id:folderId,name,createdAt:Date.now()});
+    await saveFolderMeta(currentFolderMeta);
+    closeModal();renderFolder();
+  }catch(e){showMsg(msgEl,'error',e.message)}
+  finally{window._isCreatingFolder=false;}
+}
+
+// ── UPLOAD ────────────────────────────────────────────────────────
+const CHUNK_SIZE=20*1024*1024;
+const MAX_FILES_PER_REPO=20;
+let _uploadCounter=0;
+let _uploadActive=false;
+let _deleteActive=false;
+// Tracks in-flight uploads by uid so a failed upload can be resumed
+// from wherever it left off instead of restarting from chunk 0,
+// and so successfully-uploaded chunks are never silently orphaned.
+const _pendingUploads={};
+
+function showBusyToast(msg){
+  const existing=document.getElementById('busy-toast');
+  if(existing)existing.remove();
+  const t=document.createElement('div');
+  t.id='busy-toast';t.className='busy-toast';
+  t.textContent=msg;
+  document.body.appendChild(t);
+  clearTimeout(showBusyToast._t);
+  showBusyToast._t=setTimeout(()=>t.remove(),2200);
+}
+
+function triggerUpload(){document.getElementById('file-input').click()}
+function handleFileSelect(e){
+  const files=Array.from(e.target.files);
+  e.target.value='';
+  if(files.length>0){
+    const menu=document.getElementById('fab-menu');
+    if(menu&&menu.classList.contains('active'))toggleFab();
+    uploadFiles(files);
+  }
+}
+
+async function uploadFiles(files){
+  if(_uploadActive){showBusyToast('⚠ Upload already in progress — please wait.');return;}
+  window._cancelUpload=false;
+  _uploadActive=true;
+  try {
+    let allSuccess = true;
+    const panel=document.getElementById('upload-panel');
+    const list=document.getElementById('upload-list');
+    panel.classList.add('active');
+    const originalFolderId=currentFolderMeta.id;
+    let anySucceeded=false;
+    for(const file of files){
+      if(window._cancelUpload) break;
+      const uid=`up_${++_uploadCounter}`;
+      const itemEl=document.createElement('div');
+      itemEl.className='upload-item';
+      itemEl.dataset.uid=uid;
+      itemEl.innerHTML=`<div class="upload-item-name">${escHtml(file.name)}</div><div class="upload-progress-bar"><div class="upload-progress-fill" id="upfill_${uid}" style="width:0%"></div></div><div class="upload-status" id="upstat_${uid}">Preparing...</div>`;
+      list.appendChild(itemEl);
+      const fillEl=itemEl.querySelector(`#upfill_${uid}`);
+      const statEl=itemEl.querySelector(`#upstat_${uid}`);
+      const progress=(pct,status,retrying)=>{
+        if(fillEl)fillEl.style.width=pct+'%';
+        if(statEl)statEl.textContent=status;
+        itemEl.classList.toggle('retrying',!!retrying);
+      };
+      try{
+        await uploadSingleFile(file,progress,uid);
+        if(fillEl){fillEl.style.width='100%';fillEl.style.background='var(--success)'}
+        if(statEl)statEl.textContent='✓ Done';
+        itemEl.classList.remove('retrying');
+        delete _pendingUploads[uid];
+        anySucceeded=true;
+        await saveFolderMeta(currentFolderMeta);
+        await saveConfig();
+        updateStats();
+        renderFolder();
+      }catch(e){
+        allSuccess = false;
+        if(fillEl)fillEl.style.background='var(--danger)';
+        itemEl.classList.remove('retrying');
+        const uploadedChunks=(_pendingUploads[uid]&&_pendingUploads[uid].chunks||[]).length;
+        if(statEl)statEl.innerHTML=`✗ ${escHtml(e.message)} ${uploadedChunks>0?`(${uploadedChunks} chunk(s) saved)`:''}`;
+        const retryBtn=document.createElement('button');
+        retryBtn.className='upload-retry-btn';
+        retryBtn.textContent='Retry upload';
+        retryBtn.onclick=async()=>{
+          if(_uploadActive){showBusyToast('⚠ Upload already in progress — please wait.');return;}
+          if(currentFolderMeta.id!==originalFolderId){showBusyToast('⚠ Navigate back to the original folder to retry.');return;}
+          retryBtn.remove();
+          _uploadActive=true;
+          window._cancelUpload=false;
+          try{
+            await uploadSingleFile(file,progress,uid);
+            if(fillEl){fillEl.style.width='100%';fillEl.style.background='var(--success)'}
+            if(statEl)statEl.textContent='✓ Done';
+            itemEl.classList.remove('retrying');
+            delete _pendingUploads[uid];
+            await saveFolderMeta(currentFolderMeta);
+            await saveConfig();
+            updateStats();
+            renderFolder();
+          }catch(e2){
+            if(statEl)statEl.textContent='✗ '+e2.message;
+            itemEl.appendChild(retryBtn);
+          }finally{_uploadActive=false;}
+        };
+        itemEl.appendChild(retryBtn);
+      }
+    }
+    if(allSuccess && !window._cancelUpload) {
+      setTimeout(()=>closeUploadPanel(), 600);
+    }
+  } finally {
+    _uploadActive=false;
+  }
+}
+
+// Uploads a file in chunks with retry-on-failure. Progress on already-uploaded
+// chunks is tracked in _pendingUploads[uid] so that if this throws partway
+// through, calling it again with the same uid resumes from the next
+// un-uploaded chunk rather than re-uploading (and duplicating) earlier ones.
+async function uploadSingleFile(file,progress,uid){
+  const{pat,key,username}=session;
+  const totalSize=file.size;
+  const numChunks=Math.ceil(totalSize/CHUNK_SIZE);
+
+  if(!_pendingUploads[uid]){
+    _pendingUploads[uid]={
+      fileId:`file_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+      chunks:[] // {chunkIndex, repoName, filename} for chunks already uploaded to GitHub
+    };
+  }
+  const state=_pendingUploads[uid];
+  const fileId=state.fileId;
+  const startIndex=state.chunks.length;
+
+  progress(Math.round((startIndex/numChunks)*90),startIndex>0?`Resuming at ${Math.round((startIndex/numChunks)*100)}%...`:`0% uploaded`);
+
+  for(let i=startIndex;i<numChunks;i++){
+    if(window._cancelUpload) throw new Error('Upload cancelled by user');
+    const start=i*CHUNK_SIZE;
+    const end=Math.min(start+CHUNK_SIZE,totalSize);
+    const chunkData=new Uint8Array(await file.slice(start,end).arrayBuffer());
+    const encChunk=await encryptData(chunkData,key);
+    const repoInfo=await ensureDataRepo();
+    const chunkFilename=`chunk_${fileId}_${i}_v1.enc`;
+
+    await withRetry(
+      ()=>ghUploadFile(username,repoInfo.name,chunkFilename,encChunk,pat),
+      {
+        maxRetries:5,
+        onRetry:(attempt,max,wait)=>progress(
+          Math.round((i/numChunks)*90),
+          `${Math.round((i/numChunks)*100)}% — network error, retry ${attempt}/${max} in ${Math.round(wait/1000)}s...`,
+          true
+        )
+      }
+    );
+
+    repoInfo.fileCount=(repoInfo.fileCount||0)+1;
+    // Record success immediately — this chunk is now durably uploaded and
+    // will not be re-sent (or orphaned) if a later chunk fails.
+    state.chunks.push({chunkIndex:i,repoName:repoInfo.name,filename:chunkFilename});
+    progress(Math.round(((i+1)/numChunks)*90),`${Math.round(((i+1)/numChunks)*100)}% uploaded`);
+  }
+
+  // All chunks uploaded successfully — build the file entry and add to
+  // the in-memory folder meta. Caller (uploadFiles) persists it to GitHub.
+  const finalMime=file.type||'application/octet-stream';
+  const fileEntry={id:fileId,name:file.name,size:totalSize,mimeType:finalMime,numChunks,chunks:state.chunks,createdAt:Date.now(),updatedAt:Date.now()};
+  if(!currentFolderMeta.files)currentFolderMeta.files=[];
+  currentFolderMeta.files.push(fileEntry);
+  session.config.totalFiles=(session.config.totalFiles||0)+1;
+  session.config.totalSize=(session.config.totalSize||0)+totalSize;
+  progress(100,'Complete');
+}
+
+// ── DATA REPOS ────────────────────────────────────────────────────
+async function ensureDataRepo(){
+  const{pat,username,config}=session;
+  for(const repo of(config.dataRepos||[])){if((repo.fileCount||0)<MAX_FILES_PER_REPO)return repo}
+  const repoNum=(config.dataRepos||[]).length+1;
+  const repoName=`vaultdrive-data-${repoNum}`;
+  await withRetry(()=>createRepo(repoName,pat));
+  await sleep(1500);
+  const newRepo={name:repoName,fileCount:0};
+  if(!config.dataRepos)config.dataRepos=[];
+  config.dataRepos.push(newRepo);
+  await saveConfig();return newRepo;
+}
+async function saveConfig(){
+  const{pat,key,username,config}=session;
+  const oldFilename=session.configFilename||null;
+  session.configFilename=await saveVersionedFile(CONFIG_FILE_PREFIX,await encryptText(JSON.stringify(config),key),pat,username,oldFilename);
+}
+
+// ── FILE VIEWER HELPERS ───────────────────────────────────────────
+const READABLE_EXTS=['txt','md','json','xml','html','css','js','ts','jsx','tsx','py','rb','go','rs','c','cpp','h','hpp','java','kt','swift','sh','bash','zsh','yml','yaml','toml','ini','cfg','conf','env','log','csv','sql','graphql','vue','svelte','php','pl','lua','r','scala','hs','ex','exs','elm','dart'];
+
+function isImage(fileEntry){
+  const ext=(fileEntry.name||'').split('.').pop().toLowerCase();
+  return['jpg','jpeg','png','gif','webp','bmp','svg','heic','avif'].includes(ext);
+}
+function isPdf(fileEntry){
+  const ext=(fileEntry.name||'').split('.').pop().toLowerCase();
+  return ext==='pdf';
+}
+function isReadable(fileEntry){
+  const ext=(fileEntry.name||'').split('.').pop().toLowerCase();
+  return READABLE_EXTS.includes(ext)&&(fileEntry.size||0)<=5*1024*1024;
+}
+
+function getImageMime(ext){
+  return{svg:'image/svg+xml',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',bmp:'image/bmp',avif:'image/avif',heic:'image/heic'}[ext]||'image/jpeg';
+}
+async function fetchFileData(fileEntry){
+  const{pat,key,username}=session;
+  const chunks=[...(fileEntry.chunks||[])].sort((a,b)=>a.chunkIndex-b.chunkIndex);
+  const allData=[];let total=0;
+  for(const chunk of chunks){
+    const enc=await ghGetFileRawRetry(username,chunk.repoName,chunk.filename,pat);
+    const dec=await decryptData(enc,key);
+    allData.push(dec);total+=dec.length;
+  }
+  const merged=new Uint8Array(total);let offset=0;
+  for(const c of allData){merged.set(c,offset);offset+=c.length}
+  return merged;
+}
+
+// ── GALLERY VIEWER ────────────────────────────────────────────────
+let _gallery=null;
+
+function cleanupGallery(){
+  if(!_gallery)return;
+  if(_gallery.keyHandler)document.removeEventListener('keydown',_gallery.keyHandler);
+  for(const url of Object.values(_gallery.cache)){if(typeof url==='string'&&url.startsWith('blob:'))URL.revokeObjectURL(url)}
+  _gallery=null;
+}
+
+async function previewImage(fileEntry){
+  cleanupGallery();
+  const images=(currentFolderMeta.files||[]).filter(f=>isImage(f));
+  const idx=images.findIndex(f=>f.id===fileEntry.id);
+  _gallery={images,currentIndex:idx<0?0:idx,cache:{},keyHandler:null,loading:false};
+
+  showModal('');
+  document.getElementById('modal-box').classList.add('img-preview');
+  galleryRenderLoading(_gallery.currentIndex);
+
+  _gallery.keyHandler=(e)=>{
+    if(e.key==='ArrowLeft'){e.preventDefault();galleryNav(-1)}
+    else if(e.key==='ArrowRight'){e.preventDefault();galleryNav(1)}
+    else if(e.key==='Escape'){e.preventDefault();closeModal()}
+  };
+  document.addEventListener('keydown',_gallery.keyHandler);
+
+  try{
+    const url=await galleryFetchImage(_gallery.currentIndex);
+    if(!_gallery||_gallery.currentIndex!==(idx<0?0:idx))return;
+    galleryRenderFrame(_gallery.currentIndex,url);
+    galleryPreloadAdjacent(_gallery.currentIndex);
+  }catch(e){
+    document.getElementById('modal-box').classList.remove('img-preview');
+    document.getElementById('modal-content').innerHTML=`<h3>Preview failed</h3><p style="color:var(--danger);font-size:0.82rem">${escHtml(e.message)}</p><button class="btn btn-ghost" onclick="closeModal()">Close</button>`;
+  }
+}
+
+async function galleryFetchImage(index){
+  if(!_gallery||index<0||index>=_gallery.images.length)return null;
+  if(_gallery.cache[index])return _gallery.cache[index];
+  const fileEntry=_gallery.images[index];
+  const merged=await fetchFileData(fileEntry);
+  const ext=(fileEntry.name||'').split('.').pop().toLowerCase();
+  const blob=new Blob([merged],{type:getImageMime(ext)});
+  const url=URL.createObjectURL(blob);
+  if(_gallery){_gallery.cache[index]=url}else{URL.revokeObjectURL(url)}
+  return url;
+}
+
+function galleryRenderLoading(index){
+  if(!_gallery)return;
+  const name=_gallery.images[index]?_gallery.images[index].name:'';
+  const total=_gallery.images.length;
+  const hasPrev=index>0,hasNext=index<total-1;
+  document.getElementById('modal-content').innerHTML=`
+    <div class="img-preview-bar">
+      <span class="img-preview-name">${escHtml(name)}</span>
+      <span class="gallery-counter">${index+1} / ${total}</span>
+      <div class="img-preview-actions">
+        <button class="img-preview-btn" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+    <div class="img-preview-body">
+      ${hasPrev?'<button class="gallery-nav prev" onclick="galleryNav(-1)">&#8249;</button>':''}
+      <div class="gallery-loading"><div class="spinner"></div><span>Loading...</span></div>
+      ${hasNext?'<button class="gallery-nav next" onclick="galleryNav(1)">&#8250;</button>':''}
+    </div>
+  `;
+}
+
+function galleryRenderFrame(index,url){
+  if(!_gallery)return;
+  const fileEntry=_gallery.images[index];
+  const total=_gallery.images.length;
+  const hasPrev=index>0,hasNext=index<total-1;
+  document.getElementById('modal-content').innerHTML=`
+    <div class="img-preview-bar">
+      <span class="img-preview-name">${escHtml(fileEntry.name)}</span>
+      <span class="gallery-counter">${index+1} / ${total}</span>
+      <div class="img-preview-actions">
+        <button class="img-preview-btn" onclick="(()=>{const a=document.createElement('a');a.href='${url}';a.download='${escHtml(fileEntry.name)}';a.click()})()">↓ Save</button>
+        <button class="img-preview-btn" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+    <div class="img-preview-body">
+      ${hasPrev?'<button class="gallery-nav prev" onclick="galleryNav(-1)">&#8249;</button>':''}
+      <img src="${url}" alt="${escHtml(fileEntry.name)}"/>
+      ${hasNext?'<button class="gallery-nav next" onclick="galleryNav(1)">&#8250;</button>':''}
+    </div>
+  `;
+}
+
+async function galleryNav(delta){
+  if(!_gallery||_gallery.loading)return;
+  const newIndex=_gallery.currentIndex+delta;
+  if(newIndex<0||newIndex>=_gallery.images.length)return;
+  _gallery.currentIndex=newIndex;
+  _gallery.loading=true;
+
+  if(_gallery.cache[newIndex]){
+    galleryRenderFrame(newIndex,_gallery.cache[newIndex]);
+    _gallery.loading=false;
+    galleryPreloadAdjacent(newIndex);
+    return;
+  }
+
+  galleryRenderLoading(newIndex);
+  try{
+    const url=await galleryFetchImage(newIndex);
+    if(!_gallery||_gallery.currentIndex!==newIndex){if(_gallery)_gallery.loading=false;return}
+    galleryRenderFrame(newIndex,url);
+    galleryPreloadAdjacent(newIndex);
+  }catch(e){
+    if(!_gallery)return;
+    const fileEntry=_gallery.images[newIndex];
+    const total=_gallery.images.length;
+    document.getElementById('modal-content').innerHTML=`
+      <div class="img-preview-bar">
+        <span class="img-preview-name">${escHtml(fileEntry.name)}</span>
+        <span class="gallery-counter">${newIndex+1} / ${total}</span>
+        <div class="img-preview-actions"><button class="img-preview-btn" onclick="closeModal()">✕</button></div>
+      </div>
+      <div class="img-preview-body" style="color:var(--danger);font-size:0.82rem">
+        ${newIndex>0?'<button class="gallery-nav prev" onclick="galleryNav(-1)">&#8249;</button>':''}
+        <span>Failed to load: ${escHtml(e.message)}</span>
+        ${newIndex<total-1?'<button class="gallery-nav next" onclick="galleryNav(1)">&#8250;</button>':''}
+      </div>
+    `;
+  }finally{if(_gallery)_gallery.loading=false;}
+}
+
+function galleryPreloadAdjacent(index){
+  if(!_gallery)return;
+  if(index-1>=0&&!_gallery.cache[index-1])galleryFetchImage(index-1).catch(()=>{});
+  if(index+1<_gallery.images.length&&!_gallery.cache[index+1])galleryFetchImage(index+1).catch(()=>{});
+}
+
+// ── TEXT/CODE VIEWER ──────────────────────────────────────────────
+async function previewTextFile(fileEntry){
+  showModal(`<div style="padding:3rem;text-align:center;color:var(--text3);font-size:0.82rem"><div class="spinner" style="margin:0 auto 1rem"></div>Loading ${escHtml(fileEntry.name)}...</div>`);
+  document.getElementById('modal-box').classList.add('img-preview');
+  try{
+    const merged=await fetchFileData(fileEntry);
+    const text=new TextDecoder('utf-8',{fatal:false}).decode(merged);
+    const lines=text.split('\n');
+    const lineNums=lines.map((_,i)=>`<span>${i+1}</span>`).join('');
+    document.getElementById('modal-content').innerHTML=`
+      <div class="img-preview-bar">
+        <span class="img-preview-name">${escHtml(fileEntry.name)}</span>
+        <span class="gallery-counter">${formatSize(fileEntry.size||merged.length)} · ${lines.length} lines</span>
+        <div class="img-preview-actions">
+          <button class="img-preview-btn" onclick="(()=>{const b=new Blob([document.querySelector('.text-viewer-code').textContent],{type:'text/plain'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='${escHtml(fileEntry.name)}';a.click();URL.revokeObjectURL(u)})()">↓ Save</button>
+          <button class="img-preview-btn" onclick="closeModal()">✕</button>
+        </div>
+      </div>
+      <div class="text-viewer">
+        <div class="text-viewer-lines">${lineNums}</div>
+        <pre class="text-viewer-code">${escHtml(text)}</pre>
+      </div>
+    `;
+  }catch(e){
+    document.getElementById('modal-box').classList.remove('img-preview');
+    document.getElementById('modal-content').innerHTML=`<h3>Preview failed</h3><p style="color:var(--danger);font-size:0.82rem">${escHtml(e.message)}</p><button class="btn btn-ghost" onclick="closeModal()">Close</button>`;
+  }
+}
+
+async function previewPdfFile(fileEntry){
+  showModal(`<div style="padding:3rem;text-align:center;color:var(--text3);font-size:0.82rem"><div class="spinner" style="margin:0 auto 1rem"></div>Loading ${escHtml(fileEntry.name)}...</div>`);
+  document.getElementById('modal-box').classList.add('img-preview');
+  try{
+    const merged=await fetchFileData(fileEntry);
+    const b=new Blob([merged],{type:'application/pdf'});
+    const u=URL.createObjectURL(b);
+    document.getElementById('modal-content').innerHTML=`
+      <div class="img-preview-bar">
+        <span class="img-preview-name">${escHtml(fileEntry.name)}</span>
+        <span class="gallery-counter">${formatSize(fileEntry.size||merged.length)}</span>
+        <div class="img-preview-actions">
+          <button class="img-preview-btn" onclick="(()=>{const a=document.createElement('a');a.href='${u}';a.download='${escHtml(fileEntry.name)}';a.click();})()">↓ Save</button>
+          <button class="img-preview-btn" onclick="closeModal()">✕</button>
+        </div>
+      </div>
+      <div class="img-preview-body" style="padding:0">
+        <object data="${u}" type="application/pdf" style="width:100%;height:100%;display:block;border:none">
+          <div style="padding:2rem;text-align:center;color:var(--text3)">Your browser doesn't support embedded PDFs. <a href="${u}" download="${escHtml(fileEntry.name)}" style="color:var(--accent);text-decoration:underline">Download it instead</a>.</div>
+        </object>
+      </div>
+    `;
+    window._currentPdfUrl = u;
+  }catch(e){
+    document.getElementById('modal-box').classList.remove('img-preview');
+    document.getElementById('modal-content').innerHTML=`<h3>Preview failed</h3><p style="color:var(--danger);font-size:0.82rem">${escHtml(e.message)}</p><button class="btn btn-ghost" onclick="closeModal()">Close</button>`;
+  }
+}
+
+// ── DOWNLOAD ──────────────────────────────────────────────────────
+// Streams each decrypted chunk directly to disk via File System Access API (Chrome/Edge).
+// Falls back to in-memory Blob for Firefox/Safari — peak RAM = file size, not 2x.
+// Each chunk fetch is retried with backoff so one flaky request doesn't abort
+// an otherwise-successful multi-chunk download.
+async function downloadFile(fileEntry){
+  const{pat,key,username}=session;
+  const sorted=[...(fileEntry.chunks||[])].sort((a,b)=>a.chunkIndex-b.chunkIndex);
+  const mime=fileEntry.mimeType||'application/octet-stream';
+
+  showModal(`<div style="text-align:center"><h3 style="margin-bottom:0.5rem;font-size:1.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Downloading ${escHtml(fileEntry.name)}</h3><div class="upload-progress-bar" style="margin:1.5rem 0"><div class="upload-progress-fill" id="dl-fill" style="width:0%"></div></div><div id="dl-stat" style="font-size:0.85rem;color:var(--text3)">Preparing download...</div></div>`);
+  document.getElementById('modal-overlay').onclick=null; // locked during download
+
+  const setProgress=(pct,msg)=>{
+    const f=document.getElementById('dl-fill');
+    const s=document.getElementById('dl-stat');
+    if(f)f.style.width=pct+'%';
+    if(s)s.textContent=msg;
+  };
+
+  const fetchChunk=(chunk,i)=>ghGetFileRawRetry(
+    username,chunk.repoName,chunk.filename,pat,
+    (attempt,max,wait)=>{
+      const p=Math.round((i/sorted.length)*100);
+      setProgress(p,`Downloading ${p}% — retry ${attempt}/${max} in ${Math.round(wait/1000)}s...`);
+    }
+  );
+
+  // ── PATH A: File System Access API (Chrome/Edge) — true streaming, any file size ──
+  if(window.showSaveFilePicker){
+    let writable;
+    try{
+      const handle=await window.showSaveFilePicker({suggestedName:fileEntry.name,types:[{description:'File',accept:{[mime]:[]}}]});
+      writable=await handle.createWritable();
+      for(let i=0;i<sorted.length;i++){
+        const p=Math.round((i/sorted.length)*100);
+        setProgress(p,`Downloading ${p}%...`);
+        const enc=await fetchChunk(sorted[i],i);
+        const dec=await decryptData(enc,key);
+        await writable.write(dec);
+        // dec is now eligible for GC — RAM stays flat at ~60MB throughout
+      }
+      await writable.close();
+      setProgress(100,'✓ Download complete!');
+      document.getElementById('modal-overlay').onclick=closeModal; // restore
+      setTimeout(closeModal,1500);
+      return;
+    }catch(e){
+      // User cancelled the save picker — abort cleanly
+      if(e.name==='AbortError'){
+        if(writable)try{await writable.abort()}catch{}
+        document.getElementById('modal-overlay').onclick=closeModal;
+        closeModal();
+        return;
+      }
+      // Any other error (including exhausted retries) — fall through to Blob fallback
+      if(writable)try{await writable.abort()}catch{}
+      document.getElementById('modal-overlay').onclick=closeModal; // restore
+      console.warn('Streaming download failed, falling back to Blob:',e.message);
+    }
+  }
+
+  // ── PATH B: Blob fallback (Firefox, Safari) — all chunks in RAM then trigger download ──
+  try{
+    const decryptedChunks=[];
+    for(let i=0;i<sorted.length;i++){
+      const p=Math.round((i/sorted.length)*100);
+      setProgress(p,`Downloading ${p}%...`);
+      const enc=await fetchChunk(sorted[i],i);
+      const dec=await decryptData(enc,key);
+      decryptedChunks.push(dec);
+    }
+    setProgress(95,'Preparing file...');
+    const blob=new Blob(decryptedChunks,{type:mime});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=fileEntry.name;a.click();
+    URL.revokeObjectURL(url);
+    setProgress(100,'✓ Download complete!');
+    document.getElementById('modal-overlay').onclick=closeModal; // restore
+    setTimeout(closeModal,1500);
+  }catch(e){
+    document.getElementById('modal-overlay').onclick=closeModal; // restore
+    setProgress(0,'✗ Error: '+e.message);
+  }
+}
+
+// ── DELETE ────────────────────────────────────────────────────────
+async function deleteFileEntry(fileEntry){
+  session.config.totalFiles=Math.max(0,(session.config.totalFiles||1)-1);
+  session.config.totalSize=Math.max(0,(session.config.totalSize||0)-(fileEntry.size||0));
+  currentFolderMeta.files=(currentFolderMeta.files||[]).filter(f=>f.id!==fileEntry.id);
+}
+async function deleteFolderEntry(folderEntry){
+  const{pat,username}=session;
+  try{
+    const meta=await loadFolderMeta(folderEntry.id);
+    for(const file of(meta.files||[])){session.config.totalFiles=Math.max(0,(session.config.totalFiles||1)-1);session.config.totalSize=Math.max(0,(session.config.totalSize||0)-(file.size||0))}
+    await Promise.allSettled((meta.folders||[]).map(sub=>deleteFolderEntry(sub)));
+    if(meta._filename){try{await ghDeleteFile(username,CONFIG_REPO,meta._filename,pat)}catch(e){}}
+  }catch(e){console.warn('folder delete err:',e.message)}
+  currentFolderMeta.folders=(currentFolderMeta.folders||[]).filter(f=>f.id!==folderEntry.id);
+}
+
+// ── CONTEXT MENU ──────────────────────────────────────────────────
+function showItemMenu(event,itemId,itemType){
+  event.stopPropagation();
+  const menu=document.getElementById('ctx-menu');
+  const item=itemType==='folder'?(currentFolderMeta.folders||[]).find(f=>f.id===itemId):(currentFolderMeta.files||[]).find(f=>f.id===itemId);
+  if(!item)return;
+  menu.innerHTML='';
+  if(itemType==='file'){
+    addCtxItem(menu,'Download',()=>{closeCtxMenu();downloadFile(item)});
+    addCtxItem(menu,'Rename',()=>{closeCtxMenu();renameItem(item,'file')});
+    addCtxItem(menu,'Copy',()=>{closeCtxMenu();copyFile(item)});
+    addCtxItem(menu,'Move',()=>{closeCtxMenu();moveFile(item)});
+    menu.appendChild(Object.assign(document.createElement('div'),{className:'ctx-sep'}));
+    addCtxItem(menu,'Delete',async()=>{
+      closeCtxMenu();
+      if(!await confirmModal('Delete File',`Delete "${item.name}"? This cannot be undone.`,'Delete','Cancel'))return;
+      showModal('<div style="display:flex;align-items:center;justify-content:center;gap:1rem;padding:1rem 0"><div class="spinner" style="width:24px;height:24px;border-width:2px;margin:0"></div><span style="font-weight:600;font-size:1.1rem">Deleting item...</span></div>');
+      _deleteActive=true;document.getElementById('modal-overlay').onclick=null;
+      try{await deleteFileEntry(item);await saveFolderMeta(currentFolderMeta);await saveConfig();updateStats();}
+      catch(e){showBusyToast('✗ '+e.message);}
+      finally{_deleteActive=false;document.getElementById('modal-overlay').onclick=closeModal;closeModal();renderFolder();}
+    },true);
+  }else{
+    addCtxItem(menu,'Open',()=>{closeCtxMenu();openFolder(item)});
+    addCtxItem(menu,'Rename',()=>{closeCtxMenu();renameItem(item,'folder')});
+    menu.appendChild(Object.assign(document.createElement('div'),{className:'ctx-sep'}));
+    addCtxItem(menu,'Delete',async()=>{
+      closeCtxMenu();
+      if(!await confirmModal('Delete Folder',`Delete "${item.name}" and all its contents?`,'Delete','Cancel'))return;
+      showModal('<div style="display:flex;align-items:center;justify-content:center;gap:1rem;padding:1rem 0"><div class="spinner" style="width:24px;height:24px;border-width:2px;margin:0"></div><span style="font-weight:600;font-size:1.1rem">Deleting folder...</span></div>');
+      _deleteActive=true;document.getElementById('modal-overlay').onclick=null;
+      try{await deleteFolderEntry(item);await saveFolderMeta(currentFolderMeta);await saveConfig();updateStats();}
+      catch(e){showBusyToast('✗ '+e.message);}
+      finally{_deleteActive=false;document.getElementById('modal-overlay').onclick=closeModal;closeModal();renderFolder();}
+    },true);
+  }
+  menu.classList.remove('hidden');
+  const menuW=180,menuH=menu.children.length*36+8;
+  const vw=window.innerWidth/1.1,vh=window.innerHeight/1.1;
+  const x=Math.min(event.clientX/1.1,vw-menuW-8);
+  const y=Math.min(event.clientY/1.1,vh-menuH-8);
+  menu.style.left=x+'px';
+  menu.style.top=y+'px';
+}
+function addCtxItem(menu,label,onClick,danger=false){
+  const item=document.createElement('div');
+  item.className='ctx-item'+(danger?' danger':'');
+  item.textContent=label;item.onclick=onClick;menu.appendChild(item);
+}
+function closeCtxMenu(){document.getElementById('ctx-menu').classList.add('hidden')}
+document.addEventListener('click',closeCtxMenu);
+
+// ── FOLDER PICKER & COPY/MOVE ─────────────────────────────────────
+let _pickerHistory = ['f_root'];
+let _pickerMetaCache = {};
+async function showFolderPicker(title, callback) {
+  _pickerHistory = ['f_root'];
+  await renderPicker(title, callback);
+}
+async function renderPicker(title, callback) {
+  const currentId = _pickerHistory[_pickerHistory.length-1];
+  if(!_pickerMetaCache[currentId]) _pickerMetaCache[currentId] = await loadFolderMeta(currentId);
+  const meta = _pickerMetaCache[currentId];
+  
+  let html = `<h3>${escHtml(title)}</h3>`;
+  html += `<div style="max-height:250px;overflow-y:auto;background:var(--bg2);border:1px solid var(--border);padding:0.5rem;margin-bottom:1rem">`;
+  
+  if(_pickerHistory.length > 1) {
+     html += `<div class="ctx-item" onclick="window._pickerBack()"><span style="font-size:1.2em;margin-right:8px">↵</span> .. (Back)</div>`;
+  }
+  
+  for(const f of (meta.folders || [])) {
+     html += `<div class="ctx-item" onclick="window._pickerGo('${f.id}')"><span class="file-type-icon" style="margin-right:8px"><svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg></span>${escHtml(f.name)}</div>`;
+  }
+  if((meta.folders || []).length === 0) {
+     html += `<div style="color:var(--text3);font-size:0.8rem;text-align:center;padding:1rem">No subfolders</div>`;
+  }
+  html += `</div>`;
+  html += `<button class="btn btn-primary" onclick="window._pickerSelect()">Select this folder</button><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>`;
+  
+  showModal(html);
+  
+  window._pickerBack = async () => { _pickerHistory.pop(); await renderPicker(title, callback); };
+  window._pickerGo = async (id) => { _pickerHistory.push(id); await renderPicker(title, callback); };
+  window._pickerSelect = () => { closeModal(); callback(currentId); };
+}
+
+function copyFile(item) {
+  showFolderPicker('Copy to...', async (destId) => {
+    if(destId === currentFolderMeta.id) { showBusyToast('Already in this folder'); return; }
+    showModal('<h3>Copying...</h3><div class="spinner" style="margin:1rem auto;display:block"></div>');
+    try {
+      const destMeta = await loadFolderMeta(destId);
+      const fileCopy = JSON.parse(JSON.stringify(item));
+      fileCopy.id = 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+      destMeta.files = destMeta.files || [];
+      destMeta.files.push(fileCopy);
+      await saveFolderMeta(destMeta);
+      session.config.totalFiles = (session.config.totalFiles || 0) + 1;
+      session.config.totalSize = (session.config.totalSize || 0) + (fileCopy.size || 0);
+      await saveConfig();
+      updateStats();
+      showBusyToast('✓ Copied successfully');
+    } catch(e) {
+      showBusyToast('✗ ' + e.message);
+    } finally {
+      closeModal();
+    }
+  });
+}
+
+function moveFile(item) {
+  showFolderPicker('Move to...', async (destId) => {
+    if(destId === currentFolderMeta.id) { showBusyToast('Already in this folder'); return; }
+    showModal('<h3>Moving...</h3><div class="spinner" style="margin:1rem auto;display:block"></div>');
+    try {
+      const destMeta = await loadFolderMeta(destId);
+      currentFolderMeta.files = (currentFolderMeta.files || []).filter(f => f.id !== item.id);
+      destMeta.files = destMeta.files || [];
+      destMeta.files.push(item);
+      await saveFolderMeta(currentFolderMeta);
+      await saveFolderMeta(destMeta);
+      showBusyToast('✓ Moved successfully');
+    } catch(e) {
+      showBusyToast('✗ ' + e.message);
+    } finally {
+      closeModal();
+      renderFolder();
+    }
+  });
+}
+
+// ── RENAME ────────────────────────────────────────────────────────
+function renameItem(item,type){
+  showModal(`<h3>Rename</h3><div class="field"><label>New Name</label><input type="text" id="rename-input" value="${escHtml(item.name)}" style="border-radius:10px;padding:0.8rem 1rem"/></div><div id="rename-msg"></div><div style="display:flex;gap:0.75rem;margin-top:1.5rem"><button class="btn btn-primary" style="margin:0;flex:1;border-radius:20px" onclick="doRename('${item.id}','${type}')">Rename</button><button class="btn btn-ghost" style="margin:0;flex:1;border-radius:20px" onclick="closeModal()">Cancel</button></div>`);
+  setTimeout(()=>{const el=document.getElementById('rename-input');el.focus();el.select()},100);
+}
+async function doRename(itemId,type){
+  if(window._isRenaming)return;
+  const newName=document.getElementById('rename-input').value.trim();
+  if(!newName)return;
+  window._isRenaming=true;
+  const msgEl=document.getElementById('rename-msg');showMsg(msgEl,'info','Renaming...');
+  try{
+    if(type==='folder'){
+      const folder=currentFolderMeta.folders.find(f=>f.id===itemId);
+      if(folder){folder.name=newName;const sub=await loadFolderMeta(itemId);sub.name=newName;await saveFolderMeta(sub)}
+    }else{const file=currentFolderMeta.files.find(f=>f.id===itemId);if(file)file.name=newName}
+    await saveFolderMeta(currentFolderMeta);closeModal();renderFolder();
+  }catch(e){showMsg(msgEl,'error',e.message)}
+  finally{window._isRenaming=false;}
+}
+
+// ── SELECTION ─────────────────────────────────────────────────────
+function toggleSelect(id,card){
+  if(selectedItems.has(id)){selectedItems.delete(id);card.classList.remove('selected')}
+  else{selectedItems.add(id);card.classList.add('selected')}
+  updateSelectionButtons();
+}
+function updateSelectionButtons(){
+  // User explicitly asked to remove the Download and Delete popup buttons.
+}
+async function downloadSelected(){for(const id of selectedItems){const f=(currentFolderMeta.files||[]).find(f=>f.id===id);if(f)await downloadFile(f)}}
+async function deleteSelected(){
+  if(!await confirmModal('Delete Selected',`Delete ${selectedItems.size} selected item(s)?`,'Delete','Cancel'))return;
+  showModal('<div style="display:flex;align-items:center;justify-content:center;gap:1rem;padding:1rem 0"><div class="spinner" style="width:24px;height:24px;border-width:2px;margin:0"></div><span style="font-weight:600;font-size:1.1rem">Deleting items...</span></div>');
+  try{
+    const ps=[];
+    for(const id of selectedItems){
+      const f=(currentFolderMeta.files||[]).find(f=>f.id===id);
+      const folder=(currentFolderMeta.folders||[]).find(f=>f.id===id);
+      if(f)ps.push(deleteFileEntry(f));if(folder)ps.push(deleteFolderEntry(folder));
+    }
+    _deleteActive=true;document.getElementById('modal-overlay').onclick=null;
+    await Promise.allSettled(ps);selectedItems.clear();
+    await saveFolderMeta(currentFolderMeta);await saveConfig();updateStats();
+    _deleteActive=false;document.getElementById('modal-overlay').onclick=closeModal;closeModal();renderFolder();
+  }catch(e){_deleteActive=false;document.getElementById('modal-overlay').onclick=closeModal;closeModal();showBusyToast('✗ '+e.message);}
+}
+
+// ── DRAG & DROP ───────────────────────────────────────────────────
+function setupDragDrop(){
+  const app=document.getElementById('main-app');
+  const overlay=document.getElementById('drag-overlay');
+  let counter=0;
+  app.addEventListener('dragenter',e=>{e.preventDefault();counter++;if(e.dataTransfer.types.includes('Files'))overlay.classList.add('active')});
+  app.addEventListener('dragleave',()=>{counter--;if(counter===0)overlay.classList.remove('active')});
+  app.addEventListener('dragover',e=>e.preventDefault());
+  app.addEventListener('drop',e=>{e.preventDefault();counter=0;overlay.classList.remove('active');const files=Array.from(e.dataTransfer.files);if(files.length>0)uploadFiles(files)});
+}
+
+// ── STATS ─────────────────────────────────────────────────────────
+function updateStats(){
+  const config=session&&session.config;if(!config)return;
+  if(document.getElementById('stat-files')) document.getElementById('stat-files').textContent=config.totalFiles||0;
+  if(document.getElementById('stat-size')) document.getElementById('stat-size').textContent=formatSize(config.totalSize||0);
+  if(document.getElementById('stat-folders')) document.getElementById('stat-folders').textContent=(currentFolderMeta&&currentFolderMeta.folders||[]).length;
+  const maxSize=Math.max((config.dataRepos||[]).length,1)*20*20*1024*1024;
+  const pct=Math.min(((config.totalSize||0)/maxSize)*100,100);
+  if(document.getElementById('storage-fill')) document.getElementById('storage-fill').style.width=pct+'%';
+  if(document.getElementById('storage-text')) document.getElementById('storage-text').textContent=`${formatSize(config.totalSize||0)} used`;
+  if(document.getElementById('topbar-storage')) document.getElementById('topbar-storage').textContent=`${formatSize(config.totalSize||0)} saved`;
+}
+async function refreshCurrentFolder(){if(currentFolderMeta)await loadFolder(currentFolderMeta.id,true)}
+
+// ── UI HELPERS ────────────────────────────────────────────────────
+function showScreen(name){
+  document.getElementById('screen-signup').classList.add('hidden');
+  document.getElementById('screen-login').classList.add('hidden');
+  document.getElementById('main-app').classList.remove('active');
+  if(name==='signup')document.getElementById('screen-signup').classList.remove('hidden');
+  else if(name==='login')document.getElementById('screen-login').classList.remove('hidden');
+  else if(name==='app')document.getElementById('main-app').classList.add('active');
+}
+function showLoading(show){
+  document.getElementById('loading-state').style.display=show?'':'none';
+  document.getElementById('file-grid').style.display=show?'none':'';
+  document.getElementById('file-list-header').style.display='grid';
+  if(show)document.getElementById('empty-state').classList.add('hidden');
+}
+function showMsg(el,type,text){el.innerHTML=`<div class="msg msg-${type}">${escHtml(text)}</div>`}
+function showModal(html){
+  document.getElementById('modal-content').innerHTML=html;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  const fab = document.querySelector('.fab-container');
+  if(fab) fab.style.display = 'none';
+}
+function closeModal(event){
+  if(event&&event.target&&event.target!==document.getElementById('modal-overlay'))return;
+  cleanupGallery();
+  if(window._currentPdfUrl){URL.revokeObjectURL(window._currentPdfUrl);delete window._currentPdfUrl;}
+
+
+  document.getElementById('modal-overlay').classList.add('hidden');
+  document.getElementById('modal-content').innerHTML='';
+  document.getElementById('modal-box').classList.remove('img-preview');
+  document.body.style.overflow = '';
+  const fab = document.querySelector('.fab-container');
+  if(fab) fab.style.display = 'flex';
+}
+function confirmModal(title,message,okLabel,cancelLabel){
+  return new Promise(resolve=>{
+    showModal(`<h3>${escHtml(title)}</h3><p style="color:var(--text2);font-size:0.9rem;margin:1rem 0 1.5rem;line-height:1.6">${escHtml(message)}</p><div style="display:flex;gap:0.75rem"><button class="btn btn-danger" style="margin:0;flex:1;border-radius:20px" onclick="window._confirmResolve(true)">${escHtml(okLabel)}</button><button class="btn btn-ghost" style="margin:0;flex:1;border-radius:20px" onclick="window._confirmResolve(false)">${escHtml(cancelLabel)}</button></div>`);
+    window._confirmResolve=val=>{window.closeModal();resolve(val)};
+  });
+}
+function closeUploadPanel(){document.getElementById('upload-panel').classList.remove('active');document.getElementById('upload-list').innerHTML=''}
+function cancelUploads(){
+  window._cancelUpload=true;
+  closeUploadPanel();
+}
+async function doLogout(){
+  const ok=await confirmModal('Log Out','Are you sure you want to log out?','Log Out','Cancel');
+  if(!ok)return;
+  session=null;currentPath=[];currentFolderMeta=null;
+  Object.keys(_versionCounters).forEach(k=>delete _versionCounters[k]);
+  Object.keys(_folderMetaCache).forEach(k=>delete _folderMetaCache[k]);
+  showScreen('login');
+}
+function formatSize(bytes){
+  if(bytes===0)return'0 B';
+  const units=['B','KB','MB','GB','TB'];
+  const i=Math.floor(Math.log(bytes)/Math.log(1024));
+  return(bytes/Math.pow(1024,i)).toFixed(1)+' '+units[i];
+}
+function escHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// ── INIT ──────────────────────────────────────────────────────────
+showScreen('login');
+
+let currentSearchId = 0;
+document.addEventListener('click', e => {
+  const c = document.querySelector('.search-bar-container');
+  if(c && !c.contains(e.target)) {
+    const sr = document.getElementById('search-results');
+    if(sr && sr.style.display !== 'none') {
+      sr.style.display='none';
+      currentSearchId++; // Abort any running search crawls
+    }
+  }
+  const fab = document.querySelector('.fab-container');
+  if(fab && !fab.contains(e.target)) {
+    document.getElementById('fab-menu')?.classList.remove('active');
+    document.querySelector('.fab-main')?.classList.remove('active');
+  }
+});
+
+function toggleFab(){
+  if(_uploadActive){showBusyToast('⚠ Upload already in progress — please wait.');return;}
+  document.getElementById('fab-menu').classList.toggle('active');
+  document.querySelector('.fab-main').classList.toggle('active');
+}
+
+let searchTimer = null;
+function handleSearch(q){
+  const resEl=document.getElementById('search-results');
+  if(!q.trim()){resEl.style.display='none'; currentSearchId++; return;}
+  q=q.toLowerCase();
+  resEl.innerHTML='<div class="search-result-item" style="color:var(--text3);text-align:center;"><div class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:8px;vertical-align:middle"></div> Searching vault...</div>';
+  resEl.style.display='block';
+  
+  clearTimeout(searchTimer);
+  const searchId = ++currentSearchId;
+  searchTimer = setTimeout(async () => {
+    const results=[];
+    async function crawl(folderId, pathSegments) {
+      if(searchId !== currentSearchId) return;
+      let meta;
+      try {
+        meta = await loadFolderMeta(folderId);
+      } catch(e){}
+      if(searchId !== currentSearchId || !meta) return;
+      
+      if(folderId!=='root' && meta.name.toLowerCase().includes(q)) {
+        results.push({type:'folder', name:meta.name, path: '/'+pathSegments.join('/'), folderId});
+      }
+      for(const file of (meta.files||[])) {
+        if(file.name.toLowerCase().includes(q)) {
+          results.push({type:'file', name:file.name, path: '/'+pathSegments.join('/'), folderId});
+        }
+      }
+      for(const sub of (meta.folders||[])) {
+        if(searchId !== currentSearchId) return;
+        await crawl(sub.id, [...pathSegments, sub.name]);
+      }
+    }
+    await crawl('root', []);
+    if(searchId !== currentSearchId) return;
+    
+    if(results.length===0){
+      resEl.innerHTML='<div class="search-result-item" style="color:var(--text3);text-align:center;">No results found</div>';
+      return;
+    }
+    results.sort((a,b)=>a.name.localeCompare(b.name));
+    const html=results.slice(0,50).map(r=>`
+      <div class="search-result-item" onclick="jumpToSearchResult('${r.folderId}')">
+        <div class="sr-name">${escHtml(r.name)} <span style="font-size:0.6rem;color:var(--text3);font-weight:normal;background:var(--bg3);padding:0.1rem 0.3rem;border-radius:4px;margin-left:0.3rem">${r.type}</span></div>
+        <div class="sr-path">${escHtml(r.path)}</div>
+      </div>
+    `).join('');
+    resEl.innerHTML=html;
+  }, 500);
+}
+function jumpToSearchResult(folderId){
+  document.getElementById('vault-search-input').value='';
+  document.getElementById('search-results').style.display='none';
+  loadFolder(folderId);
+}
+
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter')return;
+  const active=document.activeElement;if(!active)return;
+  if(['su-username','su-pat','su-key','su-key2'].includes(active.id)){e.preventDefault();doSignup();return}
+  if(['li-username','li-key'].includes(active.id)){e.preventDefault();doLogin();return}
+  if(active.id==='new-folder-name'){e.preventDefault();createFolder();return}
+  if(active.id==='rename-input'){e.preventDefault();const btn=document.querySelector('#modal-content .btn-primary');if(btn)btn.click();return}
+});
+</script>
+</body>
+</html>
+
