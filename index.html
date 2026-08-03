@@ -584,16 +584,29 @@ async function doLogin(){
     let configJson;
     try{configJson=await decryptText(new TextDecoder().decode(result.data),key)}
     catch{throw new Error('Invalid vault key or corrupted config.')}
-    const config=JSON.parse(configJson);
+    let config=JSON.parse(configJson);
     let pat;
     try{pat=await decryptText(config.encPat,key)}
     catch{throw new Error('Failed to decrypt PAT.')}
     const user=await ghReq('GET','/user',null,pat);
     if(user.login.toLowerCase()!==username.toLowerCase())throw new Error('PAT mismatch.');
-    session={username,pat,key,config,configFilename:result.filename};
+
+    // Re-read config via authenticated API to get the freshest version
+    // (the CDN-fetched config above may be stale due to caching)
+    showMsg(msgEl,'info','Syncing latest config...');
+    const freshResult=await readLatestVersionedFile(CONFIG_FILE_PREFIX,pat,username);
+    if(freshResult){
+      try{
+        const freshJson=await decryptText(new TextDecoder().decode(freshResult.data),key);
+        config=JSON.parse(freshJson);
+      }catch{}
+    }
+    const configFilename=(freshResult||result).filename;
+
+    session={username,pat,key,config,configFilename};
     Object.keys(_versionCounters).forEach(k=>delete _versionCounters[k]);
     Object.keys(_folderMetaCache).forEach(k=>delete _folderMetaCache[k]);
-    if(result.filename){const n=parseInt(result.filename.slice(CONFIG_FILE_PREFIX.length).replace('.enc',''))||1;_versionCounters[CONFIG_FILE_PREFIX]=n}
+    if(configFilename){const n=parseInt(configFilename.slice(CONFIG_FILE_PREFIX.length).replace('.enc',''))||1;_versionCounters[CONFIG_FILE_PREFIX]=n}
     showMsg(msgEl,'success','Vault unlocked!');
     await sleep(500);enterApp();
   }catch(e){showMsg(msgEl,'error',e.message)}
@@ -1274,35 +1287,45 @@ async function downloadFile(fileEntry){
 
   // ── PATH A: File System Access API (Chrome/Edge) — true streaming, any file size ──
   if(window.showSaveFilePicker){
-    let writable;
+    let handle, writable;
+    // Step 1: Try to open the save picker. If the user cancels or
+    // the browser doesn't actually support it, fall through to Path B.
     try{
-      const handle=await window.showSaveFilePicker({suggestedName:fileEntry.name,types:[{description:'File',accept:{[mime]:[]}}]});
+      handle=await window.showSaveFilePicker({suggestedName:fileEntry.name,types:[{description:'File',accept:{[mime]:[]}}]});
       writable=await handle.createWritable();
-      for(let i=0;i<sorted.length;i++){
-        const p=Math.round((i/sorted.length)*100);
-        setProgress(p,`Downloading ${p}%...`);
-        const enc=await fetchChunk(sorted[i],i);
-        const dec=await decryptData(enc,key);
-        await writable.write(dec);
-        // dec is now eligible for GC — RAM stays flat at ~60MB throughout
-      }
-      await writable.close();
-      setProgress(100,'✓ Download complete!');
-      document.getElementById('modal-overlay').onclick=closeModal; // restore
-      setTimeout(closeModal,1500);
-      return;
     }catch(e){
-      // User cancelled the save picker — abort cleanly
       if(e.name==='AbortError'){
-        if(writable)try{await writable.abort()}catch{}
         document.getElementById('modal-overlay').onclick=closeModal;
         closeModal();
         return;
       }
-      // Any other error (including exhausted retries) — fall through to Blob fallback
-      if(writable)try{await writable.abort()}catch{}
-      document.getElementById('modal-overlay').onclick=closeModal; // restore
-      console.warn('Streaming download failed, falling back to Blob:',e.message);
+      // Picker failed for some other reason — fall through to Blob path
+      console.warn('showSaveFilePicker failed, falling back to Blob:',e.message);
+    }
+
+    // Step 2: If we got a writable handle, stream chunks into it.
+    // Any error here must STOP — never fall through to Path B,
+    // because re-downloading 7GB into RAM will crash the browser.
+    if(writable){
+      try{
+        for(let i=0;i<sorted.length;i++){
+          const p=Math.round(((i+1)/sorted.length)*100);
+          setProgress(p,`Downloading ${p}%...`);
+          const enc=await fetchChunk(sorted[i],i);
+          const dec=await decryptData(enc,key);
+          await writable.write(dec);
+        }
+        await writable.close();
+        setProgress(100,'✓ Download complete!');
+        document.getElementById('modal-overlay').onclick=closeModal;
+        setTimeout(closeModal,1500);
+        return;
+      }catch(e){
+        try{await writable.abort()}catch{}
+        document.getElementById('modal-overlay').onclick=closeModal;
+        setProgress(0,'✗ Download failed: '+e.message);
+        return; // CRITICAL: do NOT fall through to Blob fallback
+      }
     }
   }
 
